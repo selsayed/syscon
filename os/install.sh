@@ -158,7 +158,7 @@ echo "Generating Locale.."
 arch-chroot $DISKMOUNT locale-gen
 
 echo "Setting Locale"
-echo 'LANG=en_GB.UTF-8' >> $DISKMOUNT/etc/locale.gen
+echo 'LANG=en_GB.UTF-8' >> $DISKMOUNT/etc/locale.conf
 
 echo "Setting Hostname"
 echo "$NAME" >> $DISKMOUNT/etc/hostname
