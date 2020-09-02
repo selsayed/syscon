@@ -52,12 +52,16 @@ DISKMOUNT=$3
 # Fixing Variable Names
 ###############################################################################
 ROOTPART=$TARGET
+ROOTPART+="p"
 ROOTPART+=$ROOTPARTNUM
 BOOTPART=$TARGET
+BOOTPART+="p"
 BOOTPART+=$BOOTPARTNUM
 EFIPART=$TARGET
+EFIPART+="p"
 EFIPART+=$EFIPARTNUM
 SWAPPART=$TARGET
+SWAPPART+="p"
 SWAPPART+=$SWAPPARTNUM
 
 
@@ -129,7 +133,6 @@ mount -t vfat $EFIPART $DISKMOUNT/boot/efi
 
 # Swap
 export ORIGINAL_SWAP=$(swapon --show=NAME --raw --noheadings)
-swapoff $ORIGINAL_SWAP
 mkswap $SWAPPART
 swapon $SWAPPART
 
@@ -163,6 +166,7 @@ echo "Install btrfs-progs"
 arch-chroot $DISKMOUNT pacman -S btrfs-progs
 
 echo "Generating initramfs...."
+arch-chroot $DISKMOUNT pacman -S linux mkinitcpio --noconfirm
 arch-chroot $DISKMOUNT mkinitcpio -p linux
 
 echo "Installing bootloader"
