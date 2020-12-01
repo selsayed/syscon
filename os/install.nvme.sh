@@ -167,6 +167,7 @@ echo "Install btrfs-progs"
 arch-chroot $DISKMOUNT pacman -S btrfs-progs
 
 echo "Generating initramfs...."
+arch-chroot $DISKMOUNT pacman -S linux mkinitcpio --noconfirm
 arch-chroot $DISKMOUNT mkinitcpio -p linux
 
 echo "Installing bootloader"
