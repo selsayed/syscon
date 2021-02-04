@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -eou pipefail
+
+slow_print() {
+   $@ | awk '{system("sleep .1");print}'
+}
+
+slow_print_verbose() {
+   echo "$@"
+   $@ | awk '{system("sleep .1");print}'
+}

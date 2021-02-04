@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -eou pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+# resolve $SOURCE until the file is no longer a symlink
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the
+  # path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
+
+source $SCRIPT_DIR/../etc/slow_print
+
+if [ "$#" -ne 4 ]; then
+  echo "Script requires :"
+  echo "1. Target Drive"
+  echo "2. Partition Prefix Type (P for nvme, None for sda)"
+  echo "3. System Name"
+  echo "4. Mount Point"
+  exit 1
+fi
+
+TARGET_DRIVE=$1
+PARTITION_PREFIX_TYPE=$2
+SYSTEM_NAME=$3
+MOUNT_POINT=$4
+
+
+$SCRIPT_DIR/disk.partition $TARGET_DRIVE $PARTITION_PREFIX_TYPE
+$SCRIPT_DIR/disk.format $TARGET_DRIVE $PARTITION_PREFIX_TYPE
+$SCRIPT_DIR/disk.mount $TARGET_DRIVE $PARTITION_PREFIX_TYPE $MOUNT_POINT
+
+ORIGINAL_SWAP=$(swapon --show=NAME --raw --noheadings)
+slow_print_verbose swapoff $ORIGINAL_SWAP
+$SCRIPT_DIR/swap.setup $TARGET_DRIVE $PARTITION_PREFIX_TYPE
+
+$SCRIPT_DIR/base.install $SYSTEM_NAME $MOUNT_POINT
+
+$SCRIPT_DIR/swap.teardown $TARGET_DRIVE $PARTITION_PREFIX_TYPE
+slow_print_verbose swapon $ORIGINAL_SWAP
+echo ""
+echo ""
+echo "Installation Process Completed"
+echo "Do you wish to unmount (recursively) $MOUNT_POINT?"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes ) break;;
+        No ) exit 0;;
+    esac
+done
+echo "Unmounting $MOUNT_POINT"
+umount -R $MOUNT_POINT
+echo "################################################################################"
+
+

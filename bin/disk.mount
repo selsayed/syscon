@@ -1,0 +1,39 @@
+#!/bin/bash
+set -eou pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+# resolve $SOURCE until the file is no longer a symlink
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the
+  # path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
+source $SCRIPT_DIR/../etc/slow_print
+
+if [ "$#" -ne 3 ]; then
+  echo "Script requires :"
+  echo "1. Target Drive"
+  echo "2. Partition Prefix Type (P for nvme, None for sda)"
+  echo "3. Mount Point"
+  exit 1
+fi
+
+TARGET_DRIVE=$1
+PARTITION_PREFIX_TYPE=$2
+MOUNT_POINT=$3
+
+source $SCRIPT_DIR/../etc/disk_layout
+source $SCRIPT_DIR/name.partition $TARGET_DRIVE $PARTITION_PREFIX_TYPE
+
+slow_print_verbose mkdir -p $MOUNT_POINT
+slow_print_verbose mount -t btrfs -o subvol=root $ROOT_NAME $MOUNT_POINT
+slow_print_verbose mkdir -p $MOUNT_POINT/home
+slow_print_verbose mount -t btrfs -o subvol=home $ROOT_NAME $MOUNT_POINT/home
+slow_print_verbose mkdir -p $MOUNT_POINT/boot
+slow_print_verbose mount -t ext4 $BOOT_NAME $MOUNT_POINT/boot
+slow_print_verbose mkdir -p $MOUNT_POINT/boot/efi
+slow_print_verbose mount -t vfat $UEFI_NAME $MOUNT_POINT/boot/efi

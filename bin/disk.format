@@ -1,0 +1,81 @@
+#!/bin/bash
+set -eou pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+# resolve $SOURCE until the file is no longer a symlink
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the
+  # path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
+source $SCRIPT_DIR/../etc/slow_print
+
+if [ "$#" -ne 2 ]; then
+  echo "Script requires :"
+  echo "1. Target Drive"
+  echo "2. Partition Prefix Type (P for nvme, None for sda)"
+  exit 1
+fi
+
+TARGET_DRIVE=$1
+PARTITION_PREFIX_TYPE=$2
+
+source $SCRIPT_DIR/../etc/disk_layout
+source $SCRIPT_DIR/name.partition $TARGET_DRIVE $PARTITION_PREFIX_TYPE
+
+slow_print echo ""
+slow_print echo ""
+slow_print echo "################################################################################"
+slow_print echo "Information about Target Disk"
+slow_print echo "--------------------------------------------------------------------------------"
+slow_print sgdisk -p $TARGET_DRIVE
+slow_print echo "################################################################################"
+slow_print echo ""
+slow_print echo ""
+slow_print echo "Intended Filesystems"
+slow_print echo                         "------------------------------------------------"
+slow_print printf '%-16s|%-16s|%-16s\n' " Partition"    " Usage"        "Filesystem "
+slow_print echo                         "------------------------------------------------"
+slow_print printf '%-16s|%-16s|%-16s\n' " $UEFI_NAME"   " $UEFI_MOUNT"   " vfat"
+slow_print printf '%-16s|%-16s|%-16s\n' " $BOOT_NAME"   " $BOOT_MOUNT"   " ext4"
+slow_print printf '%-16s|%-16s|%-16s\n' " $ROOT_NAME"   " $ROOT_MOUNT"   " btrfs"
+slow_print printf '%-16s|%-16s|%-16s\n' " $SWAP_NAME"   " swap"          " N/A"
+slow_print echo                         "------------------------------------------------"
+slow_print echo "Do you wish to continue?"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes ) break;;
+        No ) exit 1;;
+    esac
+done
+slow_print echo ""
+slow_print echo ""
+
+slow_print echo "################################################################################"
+slow_print echo "Formatting Filesystems"
+slow_print echo "--------------------------------------------------------------------------------"
+slow_print_verbose mkfs.vfat $UEFI_NAME
+slow_print_verbose mkfs.ext4 $BOOT_NAME
+slow_print_verbose mkfs.btrfs -f $ROOT_NAME
+slow_print echo "--------------------------------------------------------------------------------"
+slow_print echo "Formatting Successful"
+slow_print echo "################################################################################"
+
+slow_print echo "################################################################################"
+slow_print echo "Creating Root Subvolume"
+slow_print echo "--------------------------------------------------------------------------------"
+TEMPORARY_DIRECTORY=$(mktemp -d /tmp/syscon.XXXX)
+slow_print_verbose mount -t btrfs $ROOT_NAME $TEMPORARY_DIRECTORY
+slow_print_verbose btrfs subvolume create $TEMPORARY_DIRECTORY/root
+slow_print_verbose btrfs subvolume create $TEMPORARY_DIRECTORY/home
+slow_print_verbose umount -R $TEMPORARY_DIRECTORY
+slow_print rmdir $TEMPORARY_DIRECTORY
+slow_print echo "--------------------------------------------------------------------------------"
+slow_print echo "Succesfully Created Root Subvolume"
+slow_print echo "################################################################################"
+
+

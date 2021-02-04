@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -eou pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+# resolve $SOURCE until the file is no longer a symlink
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the
+  # path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
+source $SCRIPT_DIR/../etc/slow_print
+
+if [ "$#" -ne 2 ]; then
+  echo "Script requires :"
+  echo "1. Target Drive"
+  echo "2. Partition Prefix Type (P for nvme, None for sda)"
+  exit 1
+fi
+
+TARGET_DRIVE=$1
+PARTITION_PREFIX_TYPE=$2
+
+source $SCRIPT_DIR/../etc/disk_layout
+
+slow_print echo "################################################################################"
+slow_print echo "Target Disk Partition Table"
+slow_print echo "--------------------------------------------------------------------------------"
+slow_print sgdisk -p $TARGET_DRIVE
+slow_print echo "################################################################################"
+slow_print echo ""
+slow_print echo ""
+slow_print echo "Partitioning $TARGET_DRIVE..."
+slow_print echo "This will erase all data on $TARGET_DRIVE"
+slow_print echo "Do you wish to continue?"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes ) break;;
+        No ) exit 1;;
+    esac
+done
+
+slow_print echo ""
+slow_print echo ""
+slow_print echo "################################################################################"
+slow_print echo "Partitioning $TARGET_DRIVE..."
+slow_print echo "--------------------------------------------------------------------------------"
+slow_print_verbose sgdisk -o $TARGET_DRIVE
+slow_print_verbose sgdisk -n $UEFI_NUMBER:2048:$UEFI_SIZE -t $UEFI_NUMBER:ef00 -g $TARGET_DRIVE
+slow_print_verbose sgdisk -n $BOOT_NUMBER:+0G:$BOOT_SIZE  -t $BOOT_NUMBER:8300 -g $TARGET_DRIVE
+slow_print_verbose sgdisk -n $SWAP_NUMBER:+0G:$SWAP_SIZE  -t $SWAP_NUMBER:8200 -g $TARGET_DRIVE
+slow_print_verbose sgdisk -n $ROOT_NUMBER:+0G             -t $ROOT_NUMBER:8300 -g $TARGET_DRIVE
+slow_print echo "--------------------------------------------------------------------------------"
+slow_print echo "Partitioning Successful."
+slow_print echo "################################################################################"
+
