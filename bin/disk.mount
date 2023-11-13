@@ -30,9 +30,7 @@ source $SCRIPT_DIR/../etc/disk_layout
 source $SCRIPT_DIR/name.partition $TARGET_DRIVE $PARTITION_PREFIX_TYPE
 
 slow_print_verbose mkdir -p $MOUNT_POINT
-slow_print_verbose mount -t btrfs -o subvol=root $ROOT_NAME $MOUNT_POINT
-slow_print_verbose mkdir -p $MOUNT_POINT/home
-slow_print_verbose mount -t btrfs -o subvol=home $ROOT_NAME $MOUNT_POINT/home
+slow_print_verbose mount $ROOT_NAME $MOUNT_POINT
 slow_print_verbose mkdir -p $MOUNT_POINT/boot
 slow_print_verbose mount -t ext4 $BOOT_NAME $MOUNT_POINT/boot
 slow_print_verbose mkdir -p $MOUNT_POINT/boot/efi

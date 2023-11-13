@@ -42,7 +42,7 @@ slow_print printf '%-16s|%-16s|%-16s\n' " Partition"    " Usage"        "Filesys
 slow_print echo                         "------------------------------------------------"
 slow_print printf '%-16s|%-16s|%-16s\n' " $UEFI_NAME"   " $UEFI_MOUNT"   " vfat"
 slow_print printf '%-16s|%-16s|%-16s\n' " $BOOT_NAME"   " $BOOT_MOUNT"   " ext4"
-slow_print printf '%-16s|%-16s|%-16s\n' " $ROOT_NAME"   " $ROOT_MOUNT"   " btrfs"
+slow_print printf '%-16s|%-16s|%-16s\n' " $ROOT_NAME"   " $ROOT_MOUNT"   " ext4"
 slow_print printf '%-16s|%-16s|%-16s\n' " $SWAP_NAME"   " swap"          " N/A"
 slow_print echo                         "------------------------------------------------"
 slow_print echo "Do you wish to continue?"
@@ -60,22 +60,8 @@ slow_print echo "Formatting Filesystems"
 slow_print echo "--------------------------------------------------------------------------------"
 slow_print_verbose mkfs.vfat $UEFI_NAME
 slow_print_verbose mkfs.ext4 $BOOT_NAME
-slow_print_verbose mkfs.btrfs -f $ROOT_NAME
+slow_print_verbose mkfs.ext4 $ROOT_NAME
 slow_print echo "--------------------------------------------------------------------------------"
 slow_print echo "Formatting Successful"
 slow_print echo "################################################################################"
-
-slow_print echo "################################################################################"
-slow_print echo "Creating Root Subvolume"
-slow_print echo "--------------------------------------------------------------------------------"
-TEMPORARY_DIRECTORY=$(mktemp -d /tmp/syscon.XXXX)
-slow_print_verbose mount -t btrfs $ROOT_NAME $TEMPORARY_DIRECTORY
-slow_print_verbose btrfs subvolume create $TEMPORARY_DIRECTORY/root
-slow_print_verbose btrfs subvolume create $TEMPORARY_DIRECTORY/home
-slow_print_verbose umount -R $TEMPORARY_DIRECTORY
-slow_print rmdir $TEMPORARY_DIRECTORY
-slow_print echo "--------------------------------------------------------------------------------"
-slow_print echo "Succesfully Created Root Subvolume"
-slow_print echo "################################################################################"
-
 

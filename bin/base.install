@@ -42,7 +42,6 @@ arch-chroot $MOUNT_POINT locale-gen
 echo 'LANG=en_GB.UTF-8' >> $MOUNT_POINT/etc/locale.conf
 echo "$SYSTEM_NAME" >> $MOUNT_POINT/etc/hostname
 rsync -aAX /var/cache/pacman/pkg/ $MOUNT_POINT/var/cache/pacman/pkg/
-arch-chroot $MOUNT_POINT pacman --noconfirm -S btrfs-progs
 arch-chroot $MOUNT_POINT pacman --noconfirm -S mkinitcpio
 arch-chroot $MOUNT_POINT mkinitcpio -p linux
 arch-chroot $MOUNT_POINT mkinitcpio -p linux-lts
@@ -68,14 +67,14 @@ arch-chroot $MOUNT_POINT grub-mkconfig -o /boot/grub/grub.cfg
 arch-chroot $MOUNT_POINT pacman --noconfirm -S gvim netctl wpa_supplicant dialog dhcpcd sudo
 arch-chroot $MOUNT_POINT passwd
 arch-chroot $MOUNT_POINT pacman --noconfirm -S git openssh base-devel
-arch-chroot $MOUNT_POINT useradd -m jayesh
-arch-chroot $MOUNT_POINT usermod -aG wheel jayesh
+arch-chroot $MOUNT_POINT useradd -m selsayed
+arch-chroot $MOUNT_POINT usermod -aG wheel selsayed
 arch-chroot $MOUNT_POINT ln -s /usr/bin/vim /usr/bin/vi
 arch-chroot $MOUNT_POINT visudo
 slow_print echo "################################################################################"
 slow_print echo "Execute the following commands:                                                 "
 slow_print echo "--------------------------------------------------------------------------------"
-slow_print echo "su -l jayesh                                                                    "
+slow_print echo "su -l selsayed                                                                  "
 slow_print echo "mkdir -p software/yay && cd software/yay                                        "
 slow_print echo "git clone https://aur.archlinux.org/yay.git git                                 "
 slow_print echo "cd git                                                                          "
