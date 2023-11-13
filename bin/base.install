@@ -26,7 +26,14 @@ fi
 SYSTEM_NAME=$1
 MOUNT_POINT=$2
 
-pacstrap -c $MOUNT_POINT base linux linux-lts linux-firmware
+# Check if we are running from live usb/iso to avoid '-c' (See man pacstrap)
+fs=$(basename `df / | tail -1 | awk '{ print $1; }'`)
+if grep -q "$fs" /proc/partitions; then
+  pacstrap -c $MOUNT_POINT base linux linux-lts linux-firmware
+else
+  pacstrap $MOUNT_POINT base linux linux-lts linux-firmware
+fi
+
 genfstab -U $MOUNT_POINT >> $MOUNT_POINT/etc/fstab
 arch-chroot $MOUNT_POINT ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
 arch-chroot $MOUNT_POINT hwclock --systohc
