@@ -36,7 +36,7 @@ $SCRIPT_DIR/disk.format $TARGET_DRIVE $PARTITION_PREFIX_TYPE
 $SCRIPT_DIR/disk.mount $TARGET_DRIVE $PARTITION_PREFIX_TYPE $MOUNT_POINT
 
 ORIGINAL_SWAP=$(swapon --show=NAME --raw --noheadings)
-slow_print_verbose swapoff $ORIGINAL_SWAP
+[[ ! -z "$ORIGINAL_SWAP" ]] && slow_print_verbose swapoff $ORIGINAL_SWAP || echo "No swap found, skipping swapoff"
 $SCRIPT_DIR/swap.setup $TARGET_DRIVE $PARTITION_PREFIX_TYPE
 
 $SCRIPT_DIR/base.install $SYSTEM_NAME $MOUNT_POINT
